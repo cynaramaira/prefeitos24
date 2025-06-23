@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mercado da Bola dos Partidos - Pernambuco</title>
+    <!-- Carrega Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Carrega a fonte Inter do Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos globais e da fonte */
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background-color: #f3f4f6; /* Cor de fundo padrão do Tailwind gray-100 */
+        }
+        /* Garantir que o elemento root não limite a largura, permitindo que as classes Tailwind funcionem */
+        #root {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        /* Para o preview do Canvas, garantimos que o React seja renderizado no body */
+        body #root {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- Carrega React e ReactDOM via CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Carrega Babel para transformar JSX no navegador (apenas para este exemplo autocontido) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // Dados processados diretamente do CSV fornecido pelo usuário.
+        // Todos os caracteres especiais foram corrigidos para a exibição correta.
+        // AS URLS DAS FOTOS ESTÃO AGORA DIRETAMENTE AQUI, NA PROPRIEDADE 'photoUrl' DE CADA PREFEITO.
+        const initialData = [
+          { city: "Abreu e Lima", mayor: "Flávio Gadelha", oldParty: "PSB", newParty: "PSB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/flavio_gadelha_abreu_e_lima.jpg" },
+          { city: "Afogados da Ingazeira", mayor: "Sandrinho Palmeira", oldParty: "PSB", newParty: "PSB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/sandrinho_palmeira_afogados_da_ingazeira.jpg" },
+          { city: "Afrânio", mayor: "Cloves Ramos", oldParty: "MDB", newParty: "MDB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/cloves_ramos_afranio.jpeg" },
+          { city: "Agrestina", mayor: "Josué Mendes", oldParty: "PSB", newParty: "PSB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/josue_mendes_agrestina.jpeg" },
+          { city: "Água Preta", mayor: "Miruca", oldParty: "PSB", newParty: "PP", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/miruca_agua_preta.jpeg" },
+          { city: "Águas Belas", mayor: "Dr. Elton Martins", oldParty: "Republicanos", newParty: "Republicanos", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/elton_martins_aguas_belas.jpeg" },
+          { city: "Alagoinha", mayor: "Simãozinho", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/simaozinho_alagoinha.jpg" },
+          { city: "Aliança", mayor: "Pedro Freitas", oldParty: "PP", newParty: "PP", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/pedro_freitas_alianca.jpeg" },
+          { city: "Altinho", mayor: "Marivaldo Pena", oldParty: "PSB", newParty: "PSB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/marivaldo_pena_altinho.jpeg" },
+          { city: "Amaraji", mayor: "Araujo", oldParty: "Avante", newParty: "Avante", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/araujo_amaragi.jpeg" },
+          { city: "Angelim", mayor: "Caique o Galeguinho", oldParty: "PSB", newParty: "PSB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/caique_o_galeginho_angelim.jpg" },
+          { city: "Araçoiaba", mayor: "Jogli Uchôa", oldParty: "PSD", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/jogli_uchoa_aracoiaba.jpg" },
+          { city: "Araripina", mayor: "Evilásio Mateus", oldParty: "PDT", newParty: "PDT", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/evilasio_mateus_araripina.jpg" },
+          { city: "Arcoverde", mayor: "Zeca Cavalcanti", oldParty: "PODE", newParty: "PODE", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/zeca_cavalcanti_arcoverde1.jpg" },
+          { city: "Barra da Gurabiraba", mayor: "Diogo", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/diogo_barra_de_guabiraba.jpg" },
+          { city: "Barreiros", mayor: "Carlinhos da Pedreira", oldParty: "PP", newParty: "PP", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/carlinhos_da_pedreira_barreiros.jpg" },
+          { city: "Belém de Maria", mayor: "Beto do Sargento", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/beto_do_sargento_belem_de_maria.jpeg" },
+          { city: "Belém do São Francisco", mayor: "Calby Cavalcanti", oldParty: "Republicanos", newParty: "Republicanos", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/calby_cavalcanti_belem_do_sao_francisco.jpeg" },
+          { city: "Belo Jardim", mayor: "Gilvandro Estrela", oldParty: "União", newParty: "União", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/gilvandro_estrela_belo_jardim.jpeg" },
+          { city: "Betânia", mayor: "Bebe Água", oldParty: "PSB", newParty: "PSB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/bebe_agua_betania.jpeg" },
+          { city: "Bezerros", mayor: "Lucielle Laurentino", oldParty: "União", newParty: "União", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/lucielle_laurentino_bezerros.jpg" },
+          { city: "Bodocó", mayor: "Dr Otávio", oldParty: "MDB", newParty: "MDB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/dr_otavio_bodoco.jpeg" },
+          { city: "Bom Conselho", mayor: "Dr Ezédio", oldParty: "PV", newParty: "PV", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/dr_ezidio_bom_conselho.jpeg" },
+          { city: "Bom Jardim", mayor: "Janjão", oldParty: "União", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/janjao_bom_jardim.jpeg" },
+          { city: "Bonito", mayor: "Dr Ruy", oldParty: "PSB", newParty: "PSB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/dr_rui_bonito.jpg" },
+          { city: "Brejão", mayor: "Saulo Maruim", oldParty: "PP", newParty: "PP", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/saulo_maruim_brejao.jpeg" },
+          { city: "Brejinho", mayor: "Gilson Bento", oldParty: "Republicanos", newParty: "Republicanos", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/gilson_bento_brejinho.jpeg" },
+          { city: "Brejo da Madre de Deus", mayor: "Roberto Asfora", oldParty: "PP", newParty: "PP", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/roberto_asfora_brejo_da_madre_de_deus.jpeg" },
+          { city: "Buenos Aires", mayor: "Henrique Queiroz", oldParty: "PP", newParty: "PP", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/henrique_queiroz_buenos_aires.jpeg" },
+          { city: "Buíque", mayor: "Túlio Monteiro", oldParty: "MDB", newParty: "MDB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/tulio_monteiro_buique.jpeg" },
+          { city: "Cabo de Santo Agostinho", mayor: "Lula Cabral", oldParty: "Solidariedade", newParty: "Solidariedade", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/lula_cabral_cabo_de_santo_agostinho.jpeg" },
+          { city: "Cabrobró", mayor: "Galego do Nanai", oldParty: "Avante", newParty: "Avante", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/galego_do_nanai_cabrobo.jpeg" },
+          { city: "Cachoeirinha", mayor: "André Raimundo", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/andre_raimundo_cachoeirinha.jpeg" },
+          { city: "Caetés", mayor: "Tirri", oldParty: "Republicanos", newParty: "Republicanos", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/tirri_caetes.jpeg" },
+          { city: "Calçado", mayor: "Zé Elias Filho", oldParty: "PP", newParty: "PP", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/ze_elias_filho_calcado.jpeg" },
+          { city: "Calumbi", mayor: "Joelson", oldParty: "Avante", newParty: "Avante", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/joelson_calumbi.jpeg" },
+          { city: "Camaragibe", mayor: "Diego Cabral", oldParty: "Republicanos", newParty: "Republicanos", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/diego_cabral_camaragibe.jpeg" },
+          { city: "Camocim de São Felix", mayor: "Sostenes", oldParty: "PSD", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/sostenes_camocim_de_sao_felix.jpeg" },
+          { city: "Camutanga", mayor: "Talita de Doda", oldParty: "PV", newParty: "PV", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/talita_de_doda_camutanga.jpeg" },
+          { city: "Canhotinho", mayor: "Sandra Paes", oldParty: "Republicanos", newParty: "Republicanos", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/sandra_paes_canhotinho.jpeg" },
+          { city: "Capoeiras", mayor: "Nego do Mercado", oldParty: "PSB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/nego_do_mercado_capoeiras.jpeg" },
+          { city: "Carnaíba", mayor: "Berg Gomes", oldParty: "PSB", newParty: "PSB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/berg_gomes_carnaiba.jpeg" },
+          { city: "Carnaubeira da Penha", mayor: "Elizinho", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/elizinho_carnaubeira_da_penha.jpeg" },
+          { city: "Carpina", mayor: "Eduarda Gouveia", oldParty: "PODE", newParty: "PODE", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/eduarda_gouveia_carpina.jpeg" },
+          { city: "Caruaru", mayor: "Rodrigo Pinheiro", oldParty: "PSD", newParty: "sem partido", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/rodrigo_pinheiro_caruaru.jpeg" },
+          { city: "Casinhas", mayor: "Juliana de Chaparral", oldParty: "União", newParty: "União", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/juliana_de_chaparral_casinhas.jpeg" },
+          { city: "Catende", mayor: "Dona Graça", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/dona_graca_catende.jpeg" },
+          { city: "Cedro", mayor: "Riva Bezerra", oldParty: "PSD", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/riva_bezerra_cedro.jpeg" },
+          { city: "Chã de Alegria", mayor: "Marcos da Roça", oldParty: "Republicanos", newParty: "Republicanos", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/marcos_da_roca_cha_de_alegria.jpeg" },
+          { city: "Chã Grande", mayor: "Sandro Advogado", oldParty: "Avante", newParty: "Avante", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/sandro_advogado_cha_grande.jpeg" },
+          { city: "Condado", mayor: "Albino", oldParty: "PP", newParty: "PP", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/albino_condado.jpeg" },
+          { city: "Correntes", mayor: "Edimilson da Bahia", oldParty: "PT", newParty: "PT", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/edimilson_da_bahia_correntes.jpeg" },
+          { city: "Cortês", mayor: "Fátima Borba", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/fatima_borba_cortes.jpeg" },
+          { city: "Cumaru", mayor: "Zeneide Medeiros", oldParty: "PSB", newParty: "PSB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/zeneide_medeiros_cumaru.jpeg" },
+          { city: "Cupira", mayor: "Eduardo Lira", oldParty: "União", newParty: "União", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/eduardo_lira_cupira.jpeg" },
+          { city: "Custódia", mayor: "Manoel Messias", oldParty: "PSD", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/manoel_messias_custodia.jpeg" },
+          { city: "Dormentes", mayor: "Corrinha de Geomarco", oldParty: "PSB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/corrinha_de_geomarco_dormentes.jpeg" },
+          { city: "Escada", mayor: "Mary Gouveia", oldParty: "PL", newParty: "PL", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/mary_gouveia_escada.jpeg" },
+          { city: "Exu", mayor: "Junior Pinto", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/junior_pinto_exu.jpeg" },
+          { city: "Feira Nova", mayor: "Joel Gonzaga", oldParty: "PSD", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/joel_gonzaga_feira_nova.jpeg" },
+          { city: "Ferreiros", mayor: "Zé Roberto", oldParty: "PSB", newParty: "PSB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/ze_roberto_ferreiros.jpeg" },
+          { city: "Flores", mayor: "Gilberto Ribeiro", oldParty: "PSB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/gilberto_ribeiro_flores.jpeg" },
+          { city: "Floresta", mayor: "Forró Maniçoba", oldParty: "PP", newParty: "PP", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/forro_manicoba_floresta.jpeg" },
+          { city: "Frei Miguelinho", mayor: "Lindonaldo da Farinha", oldParty: "PSB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/lindonaldo_da_farinha_frei_miguelinho.jpeg" },
+          { city: "Gameleira", mayor: "Dr Leandro", oldParty: "PSD", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/dr_leandro_gameleira.jpeg" },
+          { city: "Garanhuns", mayor: "Sivaldo Albino", oldParty: "PSB", newParty: "PSB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/sivaldo_albino_garanhuns.jpeg" },
+          { city: "Glória do Goitá", mayor: "Jaminho", oldParty: "PODE", newParty: "PODE", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/jaminho_gloria_do_goita.jpeg" },
+          { city: "Granito", mayor: "George de Sidney", oldParty: "PT", newParty: "PT", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/george_de_sidney_granito.jpeg" },
+          { city: "Gravatá", mayor: "Padre Joselito", oldParty: "Avante", newParty: "Avante", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/padre_joselito_gravata.jpeg" },
+          { city: "Goiana", mayor: "Marcílio Régio", oldParty: "PP", newParty: "PP", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/marcilio_regio_goiana.jpeg" },
+          { city: "Iati", mayor: "Camila Souza", oldParty: "PSB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/camila_souza_iati.jpeg" },
+          { city: "Ibimirim", mayor: "Welliton Siqueira", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/welliton_siqueira_ibimirim.jpeg" },
+          { city: "Ibirajuba", mayor: "Izalta", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/izalta_ibirajuba.jpeg" },
+          { city: "Igarassu", mayor: "Professora Elcione", oldParty: "PSD", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/professora_elcione_igarassu.jpeg" },
+          { city: "Iguaracy", mayor: "Dr Pedro Alves", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/dr_pedro_alves_iguaracy.jpeg" },
+          { city: "Ilha de Itamaracá", mayor: "Paulo Galvão", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/paulo_galvao_ilha_de_itamaraca.jpeg" },
+          { city: "Inajá", mayor: "Marcelo de Alberto", oldParty: "Republicanos", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/marcelo_de_alberto_inaja.jpeg" },
+          { city: "Ingazeira", mayor: "Luciano Torre", oldParty: "PSB", newParty: "PSB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/luciano_torre_ingazeira.jpeg" },
+          { city: "Ipojuca", mayor: "Carlos Santana", oldParty: "Republicanos", newParty: "Republicanos", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/carlos_santana_ipojuca.jpeg" },
+          { city: "Ipubi", mayor: "João Marcos Siqueira", oldParty: "PSD", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/joao_marcos_siqueira_ipubi.jpeg" },
+          { city: "Itacuruba", mayor: "Juninho Cantarelli", oldParty: "PSB", newParty: "PSB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/juninho_cantarelli_itacuruba.jpeg" },
+          { city: "Itaíba", mayor: "Pedro Pilota", oldParty: "Republicanos", newParty: "Republicanos", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/pedro_pilota_itaiba.jpeg" },
+          { city: "Itambé", mayor: "Armando Pimentel", oldParty: "PV", newParty: "PV", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/armando_pimentel_itambe.jpeg" },
+          { city: "Itapetim", mayor: "Aline", oldParty: "PSB", newParty: "PSB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/aline_itapetim.jpeg" },
+          { city: "Itapissuma", mayor: "Júnior de Irmã Teca", oldParty: "PSD", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/junior_de_irma_teca_itapissuma.jpeg" },
+          { city: "Itaquitinga", mayor: "Patrick Moraes", oldParty: "PSD", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/patrick_moraes_itaquitinga.jpeg" },
+          { city: "Jaboatão dos Guararapes", mayor: "Mano Medeiros", oldParty: "PL", newParty: "PL", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/mano_medeiros_jaboatao_dos_guararapes.jpeg" },
+          { city: "Jaqueira", mayor: "Ridete Pellegrino", oldParty: "PSD", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/ridete_pellegrino_jaqueira.jpeg" },
+          { city: "Jataúba", mayor: "Dra Cátia", oldParty: "PP", newParty: "PP", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/dra_catia_jatauba.jpeg" },
+          { city: "Jatobá", mayor: "Rogério Ferreira", oldParty: "Republicanos", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/rogerio_ferreira_jatoba.jpeg" },
+          { city: "João Alfredo", mayor: "Zé Martins", oldParty: "PSB", newParty: "PSB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/ze_martins_joao_alfredo.jpeg" },
+          { city: "Joaquim Nabuco", mayor: "Márcia Barreto", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/marcia_barreto_joaquim_nabuco.jpeg" },
+          { city: "Jucati", mayor: "Clelson Peixoto", oldParty: "Republicanos", newParty: "Republicanos", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/clelson_peixoto_jucati.jpeg" },
+          { city: "Jupi", mayor: "Rivanda", oldParty: "PSD", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/rivanda_jupi.jpeg" },
+          { city: "Jurema", mayor: "Branco de Geraldo", oldParty: "PT", newParty: "PT", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/branco_de_geraldo_jurema.jpeg" },
+          { city: "Lagoa do Itaenga", mayor: "Dimas Natanael", oldParty: "Republicanos", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/dimas_natanael_lagoa_do_itaenga.jpeg" },
+          { city: "Lagoa do Carro", mayor: "Zé Luiz", oldParty: "PODE", newParty: "PODE", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/ze_luiz_lagoa_do_carro.jpeg" },
+          { city: "Lagoa do Ouro", mayor: "Edson Quebra", oldParty: "PP", newParty: "PP", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/edson_quebra_lagoa_do_ouro.jpeg" },
+          { city: "Lagoa dos Gatos", mayor: "Stênio", oldParty: "PP", newParty: "PP", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/stenio_lagoa_dos_gatos.jpeg" },
+          { city: "Lagoa Grande", mayor: "Catharina Garziera", oldParty: "PSB", newParty: "MDB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/catharina_garziera_lagoa_grande.jpeg" },
+          { city: "Lajedo", mayor: "Erivaldo Chagas", oldParty: "Republicanos", newParty: "Republicanos", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/erivaldo_chagas_lajedo.jpeg" },
+          { city: "Limoeiro", mayor: "Orlando Jorge", oldParty: "PODE", newParty: "PODE", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/orlando_jorge_limoeiro.jpeg" },
+          { city: "Macaparana", mayor: "Paquinha", oldParty: "PP", newParty: "PP", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/paquinha_macaparana.jpeg" },
+          { city: "Machados", mayor: "Juarez da Banana", oldParty: "PSB", newParty: "PSB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/juarez_da_banana_machados.jpeg" },
+          { city: "Manari", mayor: "Junior do Audalio", oldParty: "PP", newParty: "PP", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/junior_do_audalio_manari.jpeg" },
+          { city: "Maraial", mayor: "Marlos Henrique", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/marlos_henrique_maraial.jpeg" },
+          { city: "Mirandiba", mayor: "Dr Evaldo", oldParty: "PSB", newParty: "PSB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/dr_evaldo_mirandiba.jpeg" },
+          { city: "Moreilândia", mayor: "Teto Texeira", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/teto_teixeira_moreilandia.jpeg" },
+          { city: "Moreno", mayor: "Edmilson Cupertino", oldParty: "PP", newParty: "PP", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/edmilson_cupertino_moreno.jpeg" },
+          { city: "Nazaré da Mata", mayor: "Aninha da Ferbom", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/aninha_da_ferbom_nazare_da_mata.jpeg" },
+          { city: "Olinda", mayor: "Mirella Almeida", oldParty: "PSD", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/mirella_almeida_olinda.jpeg" },
+          { city: "Orobó", mayor: "Biu Abreu", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/biu_abreu_orobo.jpeg" },
+          { city: "Orocó", mayor: "Ismael Lira", oldParty: "PSD", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/ismael_lira_oroco.jpeg" },
+          { city: "Ouricuri", mayor: "Victor Coelho", oldParty: "Republicanos", newParty: "Republicanos", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/victor_coelho_ouricuri.jpeg" },
+          { city: "Palmares", mayor: "Junior de Beto", oldParty: "PP", newParty: "PP", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/junior_de_beto_palmares.jpeg" },
+          { city: "Palmeirina", mayor: "Delegada Thatianne", oldParty: "PP", newParty: "PP", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/delegada_thatianne_palmeirina.jpeg" },
+          { city: "Panelas", mayor: "Ruben", oldParty: "PSB", newParty: "PSB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/ruben_panelas.jpeg" },
+          { city: "Paranatama", mayor: "Dr Henrique Gois", oldParty: "MDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/dr_henrique_gois_paranatama.jpeg" },
+          { city: "Paranamirim", mayor: "Múcio Angelim", oldParty: "PP", newParty: "PP", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/mucio_angelim_parnamirim.jpeg" },
+          { city: "Passira", mayor: "Silvestre", oldParty: "PSD", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/silvestre_passira.jpeg" },
+          { city: "Paudalho", mayor: "Paulinha da Educação", oldParty: "PODE", newParty: "PODE", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/paulinha_da_educacao_paudalho.jpeg" },
+          { city: "Paulista", mayor: "Severino Ramos", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/severino_ramos_paulista.jpeg" },
+          { city: "Pedra", mayor: "Júnior Vaz", oldParty: "PV", newParty: "PV", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/junior_vaz_pedra.jpeg" },
+          { city: "Pesqueira", mayor: "Cacique Marcos", oldParty: "Republicanos", newParty: "Republicanos", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/cacique_marcos_pesqueira.jpeg" },
+          { city: "Petrolândia", mayor: "Fabiano Marcos", oldParty: "Republicanos", newParty: "Republicanos", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/fabiano_marcos_petrolandia.jpeg" },
+          { city: "Petrolina", mayor: "Simão Durano", oldParty: "União", newParty: "União", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/simao_durando_petrolina.jpeg" },
+          { city: "Poção", mayor: "Guilherme Vasconcelos", oldParty: "MDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/guilherme_vasconcelos_pocao.jpeg" },
+          { city: "Pombos", mayor: "Elias Meu Fii", oldParty: "MDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/elias_meu_fii_pombos.jpeg" },
+          { city: "Primavera", mayor: "Jeyson Falcão", oldParty: "PSB", newParty: "PSB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/jeyson_falcao_primavera.jpeg" },
+          { city: "Quipapá", mayor: "Pité", oldParty: "Republicanos", newParty: "Republicanos", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/pite_quipapa.jpeg" },
+          { city: "Quixaba", mayor: "Zé Pretinho", oldParty: "Avante", newParty: "Avante", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/ze_pretinho_quixaba.jpeg" },
+          { city: "Recife", mayor: "João Campos", oldParty: "PSB", newParty: "PSB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/joao_campos_recife.jpeg" },
+          { city: "Riacho das Almas", mayor: "Dió Filho", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/dio_filho_riacho_das_almas.jpeg" },
+          { city: "Ribeirão", mayor: "Carol Jordão", oldParty: "PSB", newParty: "PSB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/carol_jordao_ribeirao.jpeg" },
+          { city: "Rio Formoso", mayor: "Berg de Hacker", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/berg_de_hacker_rio_formoso.jpeg" },
+          { city: "Sairé", mayor: "Gildo Dias", oldParty: "PT", newParty: "PT", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/gildo_dias_saire.jpeg" },
+          { city: "Salgadinho", mayor: "Joia", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/joia_salgadinho.jpeg" },
+          { city: "Salgueiro", mayor: "Fabinho", oldParty: "PRD", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/fabinho_salgueiro.jpeg" },
+          { city: "Saloá", mayor: "Junior De Rivaldo", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/junior_de_rivaldo_saloa.jpeg" },
+          { city: "Sanharó", mayor: "César Freitas", oldParty: "PC do B", newParty: "PC do B", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/cesar_freitas_sanharo.jpeg" },
+          { city: "Santa Cruz", mayor: "Cachoeira", oldParty: "Avante", newParty: "Avante", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/cachoeira_santa_cruz.jpeg" },
+          { city: "Santa Cruz da Baixa Verde", mayor: "Dr. Ismael", oldParty: "Republicanos", newParty: "Republicanos", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/dr_ismael_santa_cruz_da_baixa_verde.jpeg" },
+          { city: "Santa Cruz do Capibaribe", mayor: "Helinho Aragão", oldParty: "PSD", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/helinho_aragao_santa_cruz_do_capibaribe.jpeg" },
+          { city: "Santa Filomena", mayor: "Gildevan", oldParty: "PSD", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/gildevan_santa_filomena.jpeg" },
+          { city: "Santa Maria da Boa Vista", mayor: "George Duarte", oldParty: "PP", newParty: "PP", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/george_duarte_santa_maria_da_boa_vista.jpeg" },
+          { city: "Santa Maria do Cambucá", mayor: "Robevan", oldParty: "PV", newParty: "PV", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/robevan_santa_maria_do_cambuca.jpeg" },
+          { city: "Delson Lustosa", mayor: "Santa Terezinha", oldParty: "PODE", newParty: "PODE", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/delson_lustosa_santa_terezinha.jpeg" },
+          { city: "São Benedito do Sul", mayor: "Zé Baiano", oldParty: "PP", newParty: "PP", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/ze_baiano_sao_benedito_do_sul.jpeg" },
+          { city: "São Bento do Una", mayor: "Alexandre Batité", oldParty: "MDB", newParty: "MDB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/alexandre_batite_sao_bento_do_una.jpeg" },
+          { city: "São Caitano", mayor: "Josafa", oldParty: "União", newParty: "União", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/josafa_sao_caitano.jpeg" },
+          { city: "São João", mayor: "Wilson Lima", oldParty: "PP", newParty: "PP", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/wilson_lima_sao_joao.jpeg" },
+          { city: "São Joaquim do Monte", mayor: "Duguinha", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/duguinha_sao_joaquim_do_monte.jpeg" },
+          { city: "São José da Coroa Grande", mayor: "Barbosa", oldParty: "PSD", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/barbosa_sao_jose_da_coroa_grande.jpeg" },
+          { city: "São José do Belmonte", mayor: "Vinicius Marques", oldParty: "PSB", newParty: "PSB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/vinicius_marques_sao_jose_do_belmonte.jpeg" },
+          { city: "São José do Egito", mayor: "Fredson Brito", oldParty: "Republicanos", newParty: "Republicanos", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/fredson_brito_sao_jose_do_egito.jpeg" },
+          { city: "São Lourenço da Mata", mayor: "Vinicius Labanca", oldParty: "PSB", newParty: "PSB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/vinicius_labanca_sao_lourenco_da_mata.jpeg" },
+          { city: "São Vicente Férrer", oldParty: "Marcone", newParty: "PP", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/marcone_sao_vicente_ferrer.jpeg" },
+          { city: "Serra Talhada", mayor: "Márcia Conrado", oldParty: "PT", newParty: "PT", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/marcia_conrado_serra_talhada.jpeg" },
+          { city: "Serrita", mayor: "Aleudo Benedito", oldParty: "MDB", newParty: "MDB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/aleudo_benedito_serrita.jpeg" },
+          { city: "Sertânia", mayor: "Pollyanna Abreu", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/pollyanna_abreu_sertania.jpeg" },
+          { city: "Sirinhaém", mayor: "Manoel da Retifica", oldParty: "PODE", newParty: "PODE", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/manoel_da_retifica_sirinhaem.jpeg" },
+          { city: "Solidão", mayor: "Mayco da Farmácia", oldParty: "PSB", newParty: "PSB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/mayco_da_farmacia_solidao.jpeg" },
+          { city: "Surubim", mayor: "Chaparral", oldParty: "União", newParty: "União", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/chaparral_surubim.jpeg" },
+          { city: "Tabira", mayor: "Flávio Marques", oldParty: "PT", newParty: "PT", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/flavio_marques_tabira.jpeg" },
+          { city: "Tacaimbó", mayor: "Joelda Pereira", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/joelda_pereira_tacaimbo.jpeg" },
+          { city: "Tacaratu", mayor: "Whashington", oldParty: "MDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/whashington_tacaratu.jpeg" },
+          { city: "Tamandaré", mayor: "Carrapicho", oldParty: "Republicanos", newParty: "Republicanos", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/carrapicho_tamandare.jpeg" },
+          { city: "Taquaritinga do Norte", mayor: "Gena Lins", oldParty: "PP", newParty: "PP", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/gena_lins_taquaritinga_do_norte.jpeg" },
+          { city: "Terezinha", mayor: "Arnobio Gomes", oldParty: "Republicanos", newParty: "Republicanos", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/arnobio_gomes_terezinha.jpeg" },
+          { city: "Terra Nova", mayor: "Dinha Mororó", oldParty: "Avante", newParty: "Avante", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/dinha_mororo_terra_nova.jpeg" },
+          { city: "Timbaúba", mayor: "Ivanildinho", oldParty: "PP", newParty: "PP", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/ivanildinho_timbauba.jpeg" },
+          { city: "Toritama", mayor: "Sergio Colin", oldParty: "MDB", newParty: "MDB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/sergio_colin_toritama.jpeg" },
+          { city: "Tracunhaém", mayor: "Irmão Aluizio", oldParty: "PSD", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/irmao_aluizio_tracunhaem.jpeg" },
+          { city: "Trindade", mayor: "Helbinha de Rodrigues", oldParty: "União", newParty: "União", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/helbinha_de_rodrigues_trindade.jpeg" },
+          { city: "Triunfo", mayor: "Luciano Bonfim", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/luciano_bonfim_triunfo.jpeg" },
+          { city: "Tupanatinga", mayor: "Professor Ronaldo", oldParty: "PP", newParty: "PP", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/professor_ronaldo_tupanatinga.jpeg" },
+          { city: "Tuparetama", mayor: "Diógenes Patriota", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/diogenes_patriota_tuparetama.jpeg" },
+          { city: "Venturosa", mayor: "Kelvin Cavalcanti", oldParty: "PSD", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/kelvin_cavalcanti_venturosa.jpeg" },
+          { city: "Verdejante", mayor: "Xicão Tavares", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/xicao_tavares_verdejante.jpeg" },
+          { city: "Vertente do Lério", mayor: "Dr Histênio", oldParty: "MDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/dr_histeenio_vertente_do_lerio.jpeg" },
+          { city: "Vertentes", mayor: "Rael", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/rael_vertentes.jpeg" },
+          { city: "Vicência", mayor: "Eder", oldParty: "PSDB", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/eder_vicencia.jpeg" },
+          { city: "Vitória de Santo Antão", mayor: "Paulo Roberto", oldParty: "MDB", newParty: "MDB", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/paulo_roberto_vitoria_de_santo_antao.jpeg" },
+          { city: "Xexéu", mayor: "Thiago de Miel", oldParty: "PSD", newParty: "PSD", photoUrl: "https://jamildo.com/media/uploads/2025/prefeitos/thiago_de_miel_xexeu.jpeg" }
+        ];
+
+        // Cores definidas pelo usuário
+        const PRIMARY_COLOR = "#024796"; // Azul
+        const ACCENT_COLOR = "#f83d03"; // Laranja
+        const LIGHT_ACCENT_COLOR_BG = "#FFEFE5"; // Um laranja bem claro para o background de pop-ups/cards de transferência
+
+        function App() {
+          const [searchTerm, setSearchTerm] = useState('');
+
+          // Agrega dados para o "Mercado da Bola dos Partidos"
+          const overviewData = useMemo(() => {
+            const prefeiturasAnalisadas = initialData.length;
+            const transferencias = initialData.filter(d => d.oldParty !== d.newParty).length;
+            const permanencias = initialData.filter(d => d.oldParty === d.newParty).length;
+            const taxaDeMudanca = ((transferencias / prefeiturasAnalisadas) * 100 || 0).toFixed(1);
+
+            return { prefeiturasAnalisadas, transferencias, permanencias, taxaDeMudanca };
+          }, []);
+
+          // Agrega dados para o "Placar de Transferências"
+          const placarData = useMemo(() => {
+            const partyStats = {};
+            initialData.forEach(d => {
+              // Garante que ambos os partidos (antigo e novo) existam nas estatísticas
+              partyStats[d.oldParty] = partyStats[d.oldParty] || { contratacoes: 0, saidas: 0, saldo: 0 };
+              partyStats[d.newParty] = partyStats[d.newParty] || { contratacoes: 0, saidas: 0, saldo: 0 };
+
+              if (d.oldParty !== d.newParty) { // É uma transferência real
+                partyStats[d.oldParty].saidas++;
+                partyStats[d.oldParty].saldo--;
+                partyStats[d.newParty].contratacoes++;
+                partyStats[d.newParty].saldo++;
+              }
+            });
+
+            return Object.entries(partyStats)
+              .map(([party, stats]) => ({ party, ...stats }))
+              .sort((a, b) => b.saldo - a.saldo); // Ordena por saldo
+          }, []);
+
+          // Agrega dados para a "Classificação do Campeonato"
+          const classificacaoData = useMemo(() => {
+            const prefeiturasPorPartido = {};
+            initialData.forEach(d => {
+              prefeiturasPorPartido[d.newParty] = (prefeiturasPorPartido[d.newParty] || 0) + 1;
+            });
+
+            return Object.entries(prefeiturasPorPartido)
+              .map(([party, count]) => ({
+                party,
+                prefeituras: count,
+                saldoFinal: placarData.find(p => p.party === party)?.saldo || 0 // Reusa o saldo calculado no placar
+              }))
+              .sort((a, b) => b.prefeituras - a.prefeituras); // Ordena por número de prefeituras
+          }, [placarData]);
+
+          // Filtra as "Últimas Transferências" com base no termo de busca
+          const filteredTransfers = useMemo(() => {
+            const lowerCaseSearchTerm = searchTerm.toLowerCase();
+            return initialData.filter(entry => {
+              // Adiciona uma verificação para garantir que a propriedade existe e é uma string antes de chamar toLowerCase()
+              const mayorMatch = (entry.mayor || '').toLowerCase().includes(lowerCaseSearchTerm);
+              const cityMatch = (entry.city || '').toLowerCase().includes(lowerCaseSearchTerm);
+              const oldPartyMatch = (entry.oldParty || '').toLowerCase().includes(lowerCaseSearchTerm);
+              const newPartyMatch = (entry.newParty || '').toLowerCase().includes(lowerCaseSearchTerm);
+
+              return mayorMatch || cityMatch || oldPartyMatch || newPartyMatch;
+            });
+          }, [searchTerm]);
+
+          // Função para gerar URL de placeholder de imagem ou usar a URL fornecida
+          const getMayorPhotoSrc = (mayorName, photoUrl) => {
+            // A URL da foto vem diretamente de `photoUrl` no objeto do prefeito
+            if (photoUrl) {
+              return photoUrl;
+            }
+
+            // Caso contrário, gera um placeholder com as iniciais
+            const nameParts = (mayorName || '').split(' ');
+            let initials = '';
+            if (nameParts.length > 0) {
+              initials += nameParts[0].substring(0, 1);
+              if (nameParts.length > 1) {
+                initials += nameParts[nameParts.length - 1].substring(0, 1);
+              }
+            }
+            // Garante que as iniciais sejam maiúsculas
+            initials = initials.toUpperCase();
+
+            // Cor do texto das iniciais baseada na PRIMARY_COLOR, cor de fundo oposta
+            const bgColor = PRIMARY_COLOR.replace('#', '');
+            const textColor = ACCENT_COLOR.replace('#', ''); // Usa a cor de destaque para o texto
+
+            return `https://placehold.co/60x60/${bgColor}/${textColor}?text=${initials}`;
+          };
+
+          return (
+            <div className="min-h-screen bg-gray-100 p-6 font-sans flex flex-col items-center">
+              {/* Cabeçalho */}
+              <header className="w-full max-w-6xl bg-white p-8 rounded-2xl shadow-2xl mb-10 flex flex-col items-center text-center">
+                {/*
+                  COMO ADICIONAR A SUA LOGO PNG:
+                  A URL 'https://jamildo.com/media/uploads/logojamildo.png' geralmente NÃO carrega a imagem diretamente em sites externos.
+                  Por favor, substitua a 'src' abaixo pela URL real e publicamente acessível (que carrega a imagem PNG diretamente) da sua logo.
+                  Para o Canvas preview, estou usando um placeholder que funciona.
+                */}
+                <img
+                  src="https://placehold.co/200x80/024796/f83d03?text=SUA+LOGO+AQUI" // Placeholder funcional para a logo no Canvas
+                  alt="Logo do Site Jamildo.com"
+                  width="200" // Largura em pixels
+                  height="80" // Altura em pixels
+                  className="mb-6 object-contain" // Classes Tailwind para manter a proporção e margem
+                />
+                <h1 className="text-5xl font-extrabold mb-3" style={{ color: PRIMARY_COLOR }}>
+                  <span className="text-6xl" style={{ color: ACCENT_COLOR }}>🪑</span> Dança da cadeira dos Partidos
+                </h1>
+                <p className="text-xl text-gray-600 mb-6">Análise das transferências partidárias dos prefeitos de Pernambuco</p>
+              </header>
+
+              {/* Visão Geral: Cards */}
+              <section className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+                {/* Card: Prefeituras Analisadas */}
+                <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center justify-center text-center transform transition-transform duration-300 hover:scale-105 hover:shadow-xl">
+                  <div className="p-3 rounded-full mb-3" style={{ background: PRIMARY_COLOR }}>
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m-1 4h1m8-16v12m0 0h2m-2 0h-2M13 17h1m-1 4h1m-1-4h-2m-2 4h-2"></path></svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-700 mb-1">Prefeituras Analisadas</h3>
+                  <p className="text-4xl font-extrabold" style={{ color: PRIMARY_COLOR }}>{overviewData.prefeiturasAnalisadas}</p>
+                </div>
+
+                {/* Card: Transferências */}
+                <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center justify-center text-center transform transition-transform duration-300 hover:scale-105 hover:shadow-xl border-l-4" style={{ borderColor: ACCENT_COLOR }}>
+                  <div className="p-3 rounded-full mb-3" style={{ background: ACCENT_COLOR }}>
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-700 mb-1">Transferências</h3>
+                  <p className="text-4xl font-extrabold" style={{ color: ACCENT_COLOR }}>{overviewData.transferencias}</p>
+                </div>
+
+                {/* Card: Permanências */}
+                <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center justify-center text-center transform transition-transform duration-300 hover:scale-105 hover:shadow-xl">
+                  <div className="p-3 rounded-full mb-3" style={{ background: PRIMARY_COLOR }}>
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-700 mb-1">Permanências</h3>
+                  <p className="text-4xl font-extrabold" style={{ color: PRIMARY_COLOR }}>{overviewData.permanencias}</p>
+                </div>
+
+                {/* Card: Taxa de Mudança */}
+                <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center justify-center text-center transform transition-transform duration-300 hover:scale-105 hover:shadow-xl border-l-4" style={{ borderColor: ACCENT_COLOR }}>
+                  <div className="p-3 rounded-full mb-3" style={{ background: ACCENT_COLOR }}>
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l0 10m0 0l4-4m-4 4l-4-4m6-6l0 10m0 0l4-4m-4 4l-4-4"></path></svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-700 mb-1">Taxa de Mudança</h3>
+                  <p className="text-4xl font-extrabold" style={{ color: ACCENT_COLOR }}>{overviewData.taxaDeMudanca}%</p>
+                </div>
+              </section>
+
+              {/* Tabelas: Placar de Transferências e Classificação do Campeonato */}
+              <section className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+                {/* Placar de Transferências */}
+                <div className="bg-white p-6 rounded-xl shadow-lg transform transition-transform duration-300 hover:scale-[1.01] hover:shadow-xl">
+                  <h2 className="text-2xl font-bold mb-5 text-center" style={{ color: PRIMARY_COLOR }}>Placar de Transferências</h2>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-blue-800" style={{ backgroundColor: PRIMARY_COLOR }}>
+                        <tr>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider rounded-tl-lg">PARTIDO</th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">CONTRATAÇÕES</th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">SAÍDAS</th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider rounded-tr-lg">SALDO</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {placarData.map((data, index) => (
+                          <tr key={data.party} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{data.party}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600">{data.contratacoes}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">{data.saidas}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold" style={{ color: data.saldo > 0 ? 'green' : (data.saldo < 0 ? ACCENT_COLOR : 'gray') }}>{data.saldo > 0 ? `+${data.saldo}` : data.saldo}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Classificação do Campeonato */}
+                <div className="bg-white p-6 rounded-xl shadow-lg transform transition-transform duration-300 hover:scale-[1.01] hover:shadow-xl">
+                  <h2 className="text-2xl font-bold mb-5 text-center" style={{ color: PRIMARY_COLOR }}>Classificação do Campeonato</h2>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-blue-800" style={{ backgroundColor: PRIMARY_COLOR }}>
+                        <tr>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider rounded-tl-lg">PARTIDO</th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">PREFEITURAS</th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">SALDO FINAL</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {classificacaoData.map((data, index) => (
+                          <tr key={data.party} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{data.party}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{data.prefeituras}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold" style={{ color: data.saldoFinal > 0 ? 'green' : (data.saldoFinal < 0 ? ACCENT_COLOR : 'gray') }}>{data.saldoFinal > 0 ? `+${data.saldoFinal}` : data.saldoFinal}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </section>
+
+              {/* Últimas Transferências (Lista Individual) */}
+              <section className="w-full max-w-6xl bg-white p-8 rounded-2xl shadow-2xl mb-10">
+                <h2 className="text-3xl font-bold mb-6 text-center" style={{ color: PRIMARY_COLOR }}>Últimas Transferências</h2>
+                <div className="mb-6">
+                  <input
+                    type="text"
+                    placeholder="Buscar por prefeito, cidade ou partido..."
+                    className="w-full p-4 border-2 border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 text-lg"
+                    style={{ borderColor: PRIMARY_COLOR, '--tw-ring-color': PRIMARY_COLOR }}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+
+                {filteredTransfers.length === 0 ? (
+                  <p className="text-center text-gray-600 py-10 text-lg">Nenhuma transferência encontrada com o termo de busca.</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredTransfers.map((transfer, index) => {
+                      // Determina a cor de fundo e da borda com base na mudança de partido
+                      const isTransfer = transfer.oldParty !== transfer.newParty;
+                      const cardBgColor = isTransfer ? LIGHT_ACCENT_COLOR_BG : 'rgb(249 250 251)';
+                      const cardBorderColor = isTransfer ? ACCENT_COLOR : PRIMARY_COLOR;
+
+                      return (
+                        <div
+                          key={index}
+                          className="p-5 rounded-xl shadow-md flex items-center space-x-4 border-l-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+                          style={{ backgroundColor: cardBgColor, borderColor: cardBorderColor }}
+                        >
+                          {/* Imagem do Prefeito / Avatar Placeholder */}
+                          <div className="flex-shrink-0">
+                            {/*
+                              COMO ADICIONAR OU ALTERAR AS FOTOS DOS PREFEITOS:
+                              A URL da foto de cada prefeito está diretamente no objeto correspondente na constante 'initialData'
+                              no topo deste arquivo, na propriedade 'photoUrl'.
+                              Para adicionar ou alterar uma foto, basta editar a 'photoUrl' para a URL da imagem desejada para cada prefeito.
+                              Se 'photoUrl' estiver vazia, um avatar com as iniciais será gerado automaticamente.
+                            */}
+                            <img
+                              src={getMayorPhotoSrc(transfer.mayor, transfer.photoUrl)}
+                              alt={transfer.mayor}
+                              className="w-16 h-16 rounded-full object-cover border-2"
+                              style={{ borderColor: cardBorderColor }} // A borda da imagem segue a cor do card
+                              onError={(e) => {
+                                // Fallback para um ícone SVG genérico se a imagem não carregar
+                                e.target.onerror = null; // Evita loop infinito
+                                const encodedPrimaryColor = PRIMARY_COLOR.replace('#', '%23');
+                                e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='${encodedPrimaryColor}'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 4C14.21 4 16 5.79 16 8C16 10.21 14.21 12 12 12C9.79 12 8 10.21 8 8C8 5.79 9.79 4 12 4ZM12 20C9.34 20 6.67 18.95 4.5 17.3L5.83 15.97C7.38 17.15 9.61 18 12 18C14.39 18 16.62 17.15 18.17 15.97L19.5 17.3C17.33 18.95 14.66 20 12 20Z'/%3E%3C/svg%3E`;
+                                e.target.style.background = '#e0e0e0'; // Fundo cinza para o ícone
+                              }}
+                            />
+                          </div>
+                          <div className="flex-grow">
+                            <p className="text-lg font-bold text-gray-900 leading-tight">{transfer.mayor}</p>
+                            <p className="text-sm text-gray-600 mb-2">{transfer.city}</p>
+                            <div className="flex items-center justify-start space-x-2">
+                              <span
+                                className="px-3 py-1 rounded-full text-xs font-semibold text-white shadow-sm"
+                                style={{ backgroundColor: PRIMARY_COLOR }}
+                              >
+                                {transfer.oldParty}
+                              </span>
+                              {/* Condicionalmente exibe a seta e o novo partido */}
+                              {isTransfer ? (
+                                <>
+                                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                                  <span
+                                    className="px-3 py-1 rounded-full text-xs font-semibold text-white shadow-sm"
+                                    style={{ backgroundColor: ACCENT_COLOR }}
+                                  >
+                                    {transfer.newParty}
+                                  </span>
+                                </>
+                              ) : null /* Se os partidos forem iguais, não renderiza a seta nem o novo partido */ }
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+
+              {/* Rodapé de isenção de responsabilidade sobre os dados */}
+              <footer className="w-full max-w-6xl bg-white p-6 rounded-2xl shadow-lg mt-8 text-center text-sm text-gray-600 border-t-2 border-gray-200">
+                <p className="mb-2">
+                  Este infográfico é uma demonstração interativa dos dados fornecidos.
+                </p>
+                <p className="font-semibold text-gray-700">
+                  Para qualquer atualização ou análise mais aprofundada, por favor, me informe!
+                </p>
+              </footer>
+            </div>
+          );
+        }
+
+        // Renderiza a aplicação React no elemento 'root'
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
